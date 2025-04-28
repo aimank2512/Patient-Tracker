@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doctor_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        a {
+            text-decoration: none;
+            color: inherit;
+            /* link ka color normal text ke jaisa rahe */
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Patient Tracker</h3>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#dashboard" class="sidebar-link sidebar-active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="#patients" class="sidebar-link" onclick="showSection('patients')"><i class="fas fa-users"></i> View Patients</a>
+                <a href="#prescription" class="sidebar-link" onclick="showSection('prescription')"><i class="fas fa-prescription"></i> Digital Prescription</a>
+                <a href="#view_prescriptions" class="sidebar-link" onclick="showSection('view_prescriptions')"><i class="fas fa-file-prescription"></i> View Prescriptions</a>
+                <a href="#view_lab_reports" class="sidebar-link" onclick="showSection('view_lab_reports')"><i class="fas fa-vials"></i> View Lab Reports</a>
+                <a href="#profile" class="sidebar-link" onclick="showSection('profile')"><i class="fas fa-user-cog"></i> Profile</a>
+                <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <h2>Doctor Dashboard</h2>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        
+                        <span>Welcome, {{ doctor_data.name }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" id="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ 'error' if category == 'error' else 'success' }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Hidden input to track active section -->
+            <input type="hidden" id="active-section" value="{{ active_section | default('dashboard') }}">
+
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section">
+                <h1>Dashboard</h1>
+                <div class="stats-grid">
+                    <!-- Doctor Details Card -->
+                    <a href="#dashboard"  onclick="showSection('profile')">
+                        <div class="stat-card">
+                                     <i class="fas fa-user-cog"></i>
+                                     <h3>Profile</h3>
+                                     <span>Manage your Profile</span>
+                                 </div>
+                     </a>
+                     <a href="#dashboard"  onclick="showSection('prescription')">
+                        <div class="stat-card">
+                            <i class="fas fa-prescription"></i>
+                                     <h3>Prescription</h3>
+                                     <span>Create New Prescription</span>
+                                 </div>
+                     </a>
+                     <a href="#dashboard"  onclick="showSection('view_lab_reports')">
+                        <div class="stat-card">
+                            <i class="fas fa-vials"></i>
+                                     <h3>Lab Reports</h3>
+                                     <span>View Patient Lab Reports</span>
+                                 </div>
+                     </a>
+                     <a href="#dashboard"  onclick="showSection('view_prescriptions')">
+                        <div class="stat-card">
+                            <i class="fas fa-file-prescription"></i>
+                                     <h3>Profile</h3>
+                                     <span>View Previous Prescriptions</span>
+                                 </div>
+                     </a>
+                    <!-- Patients Assigned Card -->
+                    <a href="#dashboard"  onclick="showSection('patients')">
+                        <div class="stat-card">
+                            <i class="fas fa-users"></i>
+                            <h3>Patients Assigned</h3>
+                            <p class="stat-number">{{ patient_count }}</p>
+                        </div>
+                     </a>
+                    
+                </div>
+            </div>
+
+            <!-- Patients Section -->
+            <div id="patients" class="section hidden">
+                <h1>Assigned Patients</h1>
+                <div class="search-bar">
+                    <input type="text" id="patients-search" placeholder="Search by Patient Name or ID">
+                </div>
+                <div class="table-container">
+                    <table id="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Date of Birth</th>
+                                <th>Gender</th>
+                                <th>Contact</th>
+                                <th>Blood Group</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for patient in patients %}
+                            <tr class="patient-row">
+                                <td data-patient-id="{{ patient.patient_id }}">{{ patient.patient_id }}</td>
+                                <td data-patient-name="{{ patient.name }}">{{ patient.name }}</td>
+                                <td>{{ patient.date_of_birth }}</td>
+                                <td>{{ patient.gender }}</td>
+                                <td>{{ patient.contact }}</td>
+                                <td>{{ patient.blood_group }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not patients %}
+                            <tr>
+                                <td colspan="6" class="no-data">No patients assigned</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Prescription Section -->
+            <div id="prescription" class="section hidden">
+                <h1>Digital Prescription</h1>
+                <div class="form-container">
+                    <!-- Patient Search -->
+                    <div class="search-bar relative">
+                        <label>Search by Patient ID or Name</label>
+                        <input type="text" id="patient-search" placeholder="Enter Patient ID or Name">
+                        <div id="autocomplete-suggestions" class="autocomplete-suggestions hidden"></div>
+                    </div>
+                    <button id="clear-selection" class="clear-button hidden">Clear Selection</button>
+
+                    <!-- Prescription Form -->
+                    <form method="POST" id="prescription-form" class="hidden">
+                        <input type="hidden" name="submit_prescription" value="1">
+                        <input type="hidden" name="patient_id" id="patient-id">
+                        <input type="hidden" name="active_section" value="prescription">
+                        <div class="form-grid">
+                            <div>
+                                <label>Patient Name</label>
+                                <p id="patient-name-display"></p>
+                            </div>
+                            <div>
+                                <label>Doctor Name</label>
+                                <p>{{ doctor_data.name }}</p>
+                            </div>
+                            <div>
+                                <label for="symptoms">Symptoms</label>
+                                <textarea id="symptoms" name="symptoms" required></textarea>
+                            </div>
+                            <div>
+                                <label for="diagnosis">Diagnosis</label>
+                                <textarea id="diagnosis" name="diagnosis" required></textarea>
+                            </div>
+                            <div>
+                                <label for="advice">Advice</label>
+                                <textarea id="advice" name="advice"></textarea>
+                            </div>
+                           
+                            <div>
+                                <label for="medicine_name">Medicine Name</label>
+                                <input type="text" id="medicine_name" name="medicine_name" required>
+                            </div>
+                            <div>
+                                <label for="dosage">Dosage</label>
+                                <input type="text" id="dosage" name="dosage" required>
+                            </div>
+                            <div>
+                                <label for="frequency">Frequency</label>
+                                <input type="text" id="frequency" name="frequency" required>
+                            </div>
+                            <div>
+                                <label for="duration">Duration</label>
+                                <input type="text" id="duration" name="duration" required>
+                            </div>
+                            <div>
+                                <label for="notes">Notes</label>
+                                <textarea id="notes" name="notes"></textarea>
+                            </div>
+                            
+                        </div>
+                        <button type="submit" class="submit-button">Submit Prescription</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- View Prescriptions Section -->
+            <div id="view_prescriptions" class="section hidden">
+                <h1>View Prescriptions</h1>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Date/Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prescription in prescriptions %}
+                            <tr>
+                                <td>{{ prescription.patient_name }}</td>
+                                <td>{{ prescription.prescription_date }}</td>
+                                <td>
+                                    <a href="{{ url_for('doctor.view_prescription_pdf', prescription_id=prescription.prescription_id) }}" target="_blank" class="action-link view">View PDF</a>
+                                    <a href="{{ url_for('doctor.download_prescription_pdf', prescription_id=prescription.prescription_id) }}" class="action-link download">Download PDF</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not prescriptions %}
+                            <tr>
+                                <td colspan="3" class="no-data">No prescriptions found</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View Lab Reports Section -->
+            <div id="view_lab_reports" class="section hidden">
+                <h1>View Lab Reports</h1>
+                <div class="search-bar">
+                    <input type="text" id="lab-reports-search" placeholder="Search by Patient Name or Lab Assistant">
+                </div>
+                <div class="table-container">
+                    <table id="lab-reports-table">
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Contact</th>
+                                <th>Report Date</th>
+                                <th>Report Time</th>
+                                <th>Lab Assistant</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in lab_reports %}
+                            <tr class="lab-report-row">
+                                <td data-patient-name="{{ report.patient_name }}">{{ report.patient_name }}</td>
+                                <td>{{ report.patient_contact }}</td>
+                                <td>{{ report.report_date }}</td>
+                                <td>{{ report.report_time }}</td>
+                                <td data-lab-assistant="{{ report.lab_assistant_name }}">{{ report.lab_assistant_name }}</td>
+                                <td>
+                                    <a href="{{ url_for('doctor.view_lab_report_pdf', report_id=report.id) }}" target="_blank" class="action-link view">View PDF</a>
+                                    <a href="{{ url_for('doctor.download_lab_report_pdf', report_id=report.id) }}" class="action-link download">Download PDF</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not lab_reports %}
+                            <tr>
+                                <td colspan="6" class="no-data">No lab reports found</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div id="profile" class="section hidden">
+                <h1>Profile</h1>
+                <div class="form-container">
+                    <!-- Profile Tabs -->
+                    <div class="tab-bar">
+                        <button id="profile-details-tab" class="tab-button tab-active" onclick="showProfileTab('profile-details')">Profile Details</button>
+                        <button id="change-password-tab" class="tab-button" onclick="showProfileTab('change-password')">Change Password</button>
+                        <button id="activity-logs-tab" class="tab-button" onclick="showProfileTab('activity-logs')">Activity Logs</button>
+                    </div>
+
+                    <!-- Profile Details Tab -->
+                    <div id="profile-details" class="profile-tab">
+                        <form method="POST">
+                            <input type="hidden" name="update_profile" value="1">
+                            <input type="hidden" name="active_section" value="profile">
+                            <div class="form-grid">
+                                <div>
+                                    <label for="name">Name</label>
+                                    <input type="text" id="name" name="name" value="{{ doctor_data.name }}">
+                                </div>
+                                <div>
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" name="email" value="{{ doctor_data.email }}">
+                                </div>
+                                <div>
+                                    <label for="phone">Phone</label>
+                                    <input type="text" id="phone" name="phone" value="{{ doctor_data.phone }}">
+                                </div>
+                                <div>
+                                    <label for="specialization">Specialization</label>
+                                    <input type="text" id="specialization" name="specialization" value="{{ doctor_data.specialization }}">
+                                </div>
+                                <div>
+                                    <label for="department">Department</label>
+                                    <input type="text" id="department" name="department" value="{{ doctor_data.department }}">
+                                </div>
+                            </div>
+                            <button type="submit" class="submit-button">Update Profile</button>
+                        </form>
+                    </div>
+
+                    <!-- Change Password Tab -->
+                    <div id="change-password" class="profile-tab hidden">
+                        <form method="POST">
+                            <input type="hidden" name="change_password" value="1">
+                            <input type="hidden" name="active_section" value="profile">
+                            <div class="form-grid">
+                                <div>
+                                    <label for="current_password">Current Password</label>
+                                    <input type="password" id="current_password" name="current_password" required>
+                                </div>
+                                <div>
+                                    <label for="new_password">New Password</label>
+                                    <input type="password" id="new_password" name="new_password" required>
+                                </div>
+                                <div>
+                                    <label for="confirm_password">Confirm New Password</label>
+                                    <input type="password" id="confirm_password" name="confirm_password" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="submit-button">Change Password</button>
+                        </form>
+                    </div>
+
+                    <!-- Activity Logs Tab -->
+                    <div id="activity-logs" class="profile-tab hidden">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Action</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in activity_logs %}
+                                    <tr>
+                                        <td>{{ log.action }}</td>
+                                        <td>{{ log.timestamp }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not activity_logs %}
+                                    <tr>
+                                        <td colspan="2" class="no-data">No activity logs found</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('sidebar-active');
+            });
+            document.querySelector(`a[href="#${sectionId}"]`).classList.add('sidebar-active');
+
+            document.getElementById('active-section').value = sectionId;
+
+            // Reset search inputs when changing sections
+            if (sectionId !== 'patients') {
+                document.getElementById('patients-search').value = '';
+                filterPatients('');
+            }
+            if (sectionId !== 'view_lab_reports') {
+                document.getElementById('lab-reports-search').value = '';
+                filterLabReports('');
+            }
+        }
+
+        function showProfileTab(tabId) {
+            document.querySelectorAll('.profile-tab').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('tab-active');
+            });
+            document.getElementById(`${tabId}-tab`).classList.add('tab-active');
+        }
+
+        function filterPatients(query) {
+            const rows = document.querySelectorAll('.patient-row');
+            query = query.toLowerCase();
+            rows.forEach(row => {
+                const patientId = row.querySelector('td[data-patient-id]').getAttribute('data-patient-id').toLowerCase();
+                const patientName = row.querySelector('td[data-patient-name]').getAttribute('data-patient-name').toLowerCase();
+                if (patientId.includes(query) || patientName.includes(query)) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        }
+
+        function filterLabReports(query) {
+            const rows = document.querySelectorAll('.lab-report-row');
+            query = query.toLowerCase();
+            rows.forEach(row => {
+                const patientName = row.querySelector('td[data-patient-name]').getAttribute('data-patient-name').toLowerCase();
+                const labAssistant = row.querySelector('td[data-lab-assistant]').getAttribute('data-lab-assistant').toLowerCase();
+                if (patientName.includes(query) || labAssistant.includes(query)) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const activeSection = document.getElementById('active-section').value || 'dashboard';
+            showSection(activeSection);
+
+            // Autocomplete for patient search in prescription section
+            const searchInput = document.getElementById('patient-search');
+            const suggestionsContainer = document.getElementById('autocomplete-suggestions');
+            const prescriptionForm = document.getElementById('prescription-form');
+            const patientIdInput = document.getElementById('patient-id');
+            const patientNameDisplay = document.getElementById('patient-name-display');
+            const clearSelectionButton = document.getElementById('clear-selection');
+
+            searchInput.addEventListener('input', async () => {
+                const query = searchInput.value.trim();
+                if (query.length < 2) {
+                    suggestionsContainer.classList.add('hidden');
+                    suggestionsContainer.innerHTML = '';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/search_patients?query=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        suggestionsContainer.innerHTML = '';
+                        if (data.length === 0) {
+                            suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion no-data">No patients found</div>';
+                        } else {
+                            data.forEach(patient => {
+                                const div = document.createElement('div');
+                                div.classList.add('autocomplete-suggestion');
+                                div.textContent = `${patient.name} (${patient.patient_id})`;
+                                div.addEventListener('click', () => {
+                                    patientIdInput.value = patient.patient_id;
+                                    patientNameDisplay.textContent = patient.name;
+                                    searchInput.value = patient.name;
+                                    suggestionsContainer.classList.add('hidden');
+                                    prescriptionForm.classList.remove('hidden');
+                                    clearSelectionButton.classList.remove('hidden');
+                                });
+                                suggestionsContainer.appendChild(div);
+                            });
+                        }
+                        suggestionsContainer.classList.remove('hidden');
+                    } else {
+                        suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion error">Error fetching patients</div>';
+                        suggestionsContainer.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion error">Error fetching patients</div>';
+                    suggestionsContainer.classList.remove('hidden');
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+
+            // Clear selection in prescription section
+            clearSelectionButton.addEventListener('click', () => {
+                searchInput.value = '';
+                patientIdInput.value = '';
+                patientNameDisplay.textContent = '';
+                prescriptionForm.classList.add('hidden');
+                clearSelectionButton.classList.add('hidden');
+                suggestionsContainer.classList.add('hidden');
+                document.getElementById('symptoms').value = '';
+                document.getElementById('diagnosis').value = '';
+                document.getElementById('advice').value = '';
+                document.getElementById('medicine_name').value = '';
+                document.getElementById('dosage').value = '';
+                document.getElementById('frequency').value = '';
+                document.getElementById('duration').value = '';
+                document.getElementById('notes').value = '';
+            });
+
+            // Search functionality for patients
+            const patientsSearchInput = document.getElementById('patients-search');
+            patientsSearchInput.addEventListener('input', () => {
+                const query = patientsSearchInput.value;
+                filterPatients(query);
+            });
+
+            // Search functionality for lab reports
+            const labReportsSearchInput = document.getElementById('lab-reports-search');
+            labReportsSearchInput.addEventListener('input', () => {
+                const query = labReportsSearchInput.value;
+                filterLabReports(query);
+            });
+
+            // Initialize profile tabs
+            showProfileTab('profile-details');
+
+            // Automatically hide flash messages after 5 seconds
+            const flashMessages = document.getElementById('flash-messages');
+            if (flashMessages) {
+                setTimeout(() => {
+                    flashMessages.classList.add('hidden');
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

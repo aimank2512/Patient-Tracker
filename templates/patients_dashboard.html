@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_chatbot.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        a {
+            text-decoration: none;
+            color: inherit;
+           
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Patient Tracker</h3>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#dashboard" class="sidebar-link active" onclick="showSection('dashboard')">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="#prescriptions" class="sidebar-link" onclick="showSection('prescriptions')">
+                    <i class="fas fa-prescription-bottle-alt"></i> Prescriptions
+                </a>
+                <a href="#lab-reports" class="sidebar-link" onclick="showSection('lab-reports')">
+                    <i class="fas fa-flask"></i> Lab Reports
+                </a>
+                <a href="#profile" class="sidebar-link" onclick="showSection('profile')">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="#chatbot" class="sidebar-link" onclick="showSection('chatbot')">
+                    <i class="fas fa-robot"></i> Chatbot
+                </a>
+                <a href="/logout" class="sidebar-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-left">
+
+                    <h2><i class="fas fa-flask"></i> {{ user_data.name }}</h2>
+                </div>
+                <div class="header-right">
+
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <section class="content">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }} <i class="fas fa-times flash-close"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="section">
+                    <h1>Dashboard</h1>
+                    <div class="stats-grid">
+                        <!-- Patient Profile Cards -->
+                        <a href="#dashboard"  onclick="showSection('profile')">
+                            <div class="stat-card">
+                                         <i class="fas fa-user-cog"></i>
+                                         <h3>Profile</h3>
+                                         <span>Manage your Profile</span>
+                                     </div>
+                         </a>
+                         <a href="#dashboard"  onclick="showSection('prescriptions')">
+                            <div class="stat-card">
+                                <i class="fas fa-prescription-bottle-alt"></i>
+                                         <h3>Prescription</h3>
+                                         <span>View Previous Prescriptions</span>
+                                     </div>
+                         </a>
+                         <a href="#dashboard"  onclick="showSection('lab-reports')">
+                            <div class="stat-card">
+                                <i class="fas fa-flask"></i>
+                                         <h3>Lab Reports</h3>
+                                         <span>View Previous Lab Reports </span>
+                                     </div>
+                         </a>
+                         <a href="#dashboard"  onclick="showSection('chatbot')">
+                            <div class="stat-card">
+                                         <i class="fas fa-robot"></i>
+                                         <h3>Chatbot</h3>
+                                         <span>Ask the Chatbot</span>
+                                     </div>
+                         </a>
+                        
+
+                    </div>
+                </div>
+                <!-- Prescriptions Section -->
+                <div id="prescriptions" class="section hidden">
+                    <h1>My Prescriptions</h1>
+                    <div class="content-card">
+                        <div class="search-container">
+                            <input type="text" id="prescription-search"
+                                placeholder="Search by Prescription ID or Doctor Name..."
+                                onkeyup="searchTable('prescription-search', 'prescription-table')">
+                        </div>
+                        {% if prescriptions %}
+                        <table id="prescription-table">
+                            <thead>
+                                <tr>
+                                    <th>Prescription ID</th>
+                                    <th>Doctor Name</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prescription in prescriptions %}
+                                <tr>
+                                    <td>{{ prescription.prescription_id }}</td>
+                                    <td>{{ prescription.doctor_name }}</td>
+                                    <td>{{ prescription.prescription_date }}</td>
+                                    <td>
+                                        <a href="/patient/download_prescription/{{ prescription.prescription_id }}?view=true"
+                                            target="_blank">View</a>
+                                        <a
+                                            href="/patient/download_prescription/{{ prescription.prescription_id }}">Download</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p>No prescriptions available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Lab Reports Section -->
+                <div id="lab-reports" class="section hidden">
+                    <h1>My Lab Reports</h1>
+                    <div class="content-card">
+                        <div class="search-container">
+                            <input type="text" id="lab-report-search"
+                                placeholder="Search by Report ID or Lab Assistant Name..."
+                                onkeyup="searchTable('lab-report-search', 'lab-report-table')">
+                        </div>
+                        {% if lab_reports %}
+                        <table id="lab-report-table">
+                            <thead>
+                                <tr>
+                                    <th>Report ID</th>
+                                    <th>Lab Assistant</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in lab_reports %}
+                                <tr>
+                                    <td>{{ report.id }}</td>
+                                    <td>{{ report.lab_assistant_name }}</td>
+                                    <td>{{ report.report_date }}</td>
+                                    <td>
+                                        <a href="/patient/download_lab_report/{{ report.id }}?view=true"
+                                            target="_blank">View</a>
+                                        <a href="/patient/download_lab_report/{{ report.id }}">Download</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p>No lab reports available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div id="profile" class="section hidden">
+                    <h1>My Profile</h1>
+                    <div class="content-card">
+                        <h2>Patient Details</h2>
+                        {% if user_data %}
+                        <form action="/profile" method="POST">
+                            <input type="hidden" name="update_profile" value="true">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Patient ID</label>
+                                    <input type="text" name="patient_id" value="{{ user_data.patient_id }}" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input type="text" name="name" value="{{ user_data.name }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Date of Birth</label>
+                                    <input type="date" name="date_of_birth" value="{{ user_data.date_of_birth }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Gender</label>
+                                    <select name="gender">
+                                        <option value="Male" {% if user_data.gender=='Male' %}selected{% endif %}>Male
+                                        </option>
+                                        <option value="Female" {% if user_data.gender=='Female' %}selected{% endif %}>
+                                            Female</option>
+                                        <option value="Other" {% if user_data.gender=='Other' %}selected{% endif %}>
+                                            Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Address</label>
+                                    <input type="text" name="address" value="{{ user_data.address }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Contact</label>
+                                    <input type="text" name="contact" value="{{ user_data.contact }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Emergency Contact</label>
+                                    <input type="text" name="emergency_contact"
+                                        value="{{ user_data.emergency_contact }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Insurance Details</label>
+                                    <input type="text" name="insurance_details"
+                                        value="{{ user_data.insurance_details }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Blood Group</label>
+                                    <input type="text" name="blood_group" value="{{ user_data.blood_group }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Allergies</label>
+                                    <input type="text" name="allergies" value="{{ user_data.allergies }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Medical History</label>
+                                    <textarea name="medical_history">{{ user_data.medical_history }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Preferred Doctor</label>
+                                    <input type="text" name="preferred_doctor" value="{{ user_data.preferred_doctor }}">
+                                </div>
+                            </div>
+                            <button type="submit">Update Profile</button>
+                        </form>
+
+                        <h2>Change Password</h2>
+                        <form action="/profile" method="POST">
+                            <input type="hidden" name="change_password" value="true">
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <input type="password" name="current_password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" name="new_password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm New Password</label>
+                                <input type="password" name="confirm_password" required>
+                            </div>
+                            <button type="submit">Change Password</button>
+                        </form>
+
+                        <h2>Activity Logs</h2>
+                        {% if activity_logs %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in activity_logs %}
+                                <tr>
+                                    <td>{{ log.action }}</td>
+                                    <td>{{ log.timestamp }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p>No activity logs available.</p>
+                        {% endif %}
+                        {% else %}
+                        <p>Unable to load profile data.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Chatbot Section -->
+                <div id="chatbot" class="section hidden">
+                    <h1>Chat with MediCare Bot</h1>
+                    <div class="content-card">
+                        <div class="chatbot-container">
+                            <div class="chatbot-header">
+                                <i class="fas fa-plus-square"></i>
+                                <div>
+                                    <h3>AI ChatBot</h3>
+                                    <p>Ask about your prescriptions, lab reports, medical history, allergies, or
+                                        preferred doctor. Use the buttons or type your query below (e.g., "Show my
+                                        emergency contact" for more details).</p>
+                                </div>
+                            </div>
+                            <div class="chatbot-menu">
+                                <button onclick="handleMenuOption('lab_report')"><i class="fas fa-flask"></i> View Lab
+                                    Report</button>
+                                <button onclick="handleMenuOption('prescription')"><i
+                                        class="fas fa-prescription-bottle-alt"></i> View Prescription</button>
+                                <button onclick="handleMenuOption('profile')"><i class="fas fa-user"></i> View
+                                    Profile</button>
+                                <button onclick="handleMenuOption('medical_history')"><i
+                                        class="fas fa-notes-medical"></i> Medical History</button>
+                                <button onclick="handleMenuOption('allergies')"><i class="fas fa-allergies"></i>
+                                    Allergies</button>
+                                <button onclick="handleMenuOption('medicine_name')"><i class="fas fa-pills"></i>
+                                    Medicine Name</button>
+                                <button onclick="handleMenuOption('total_prescriptions')"><i
+                                        class="fas fa-file-prescription"></i> Total Prescriptions</button>
+                                <button onclick="handleMenuOption('total_lab_reports')"><i class="fas fa-vial"></i>
+                                    Total Lab Reports</button>
+                                <button onclick="handleMenuOption('preferred_doctor')"><i class="fas fa-user-md"></i>
+                                    Preferred Doctor</button>
+                                <button onclick="handleMenuOption('lab_assistant_name')"><i
+                                        class="fas fa-user-nurse"></i> Lab Assistant</button>
+                                <button onclick="handleMenuOption('blood_group')"><i class="fas fa-tint"></i> Blood
+                                    Group</button>
+                                <button onclick="handleMenuOption('help')"><i class="fas fa-question-circle"></i>
+                                    Help</button>
+                            </div>
+                            <div class="chatbot-messages" id="chatbot-messages">
+                                <div class="chatbot-message bot">
+                                    <p>Welcome! How can I assist you today? Use the buttons above or type your query
+                                        below.</p>
+                                </div>
+                            </div>
+                            <div class="chatbot-input">
+                                <input type="text" id="chatbot-input"
+                                    placeholder="Type your query (e.g., Show my lab report)"
+                                    onkeydown="if(event.key === 'Enter') sendMessage()">
+                                <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i> Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`a[href="#${sectionId}"]`).classList.add('active');
+        }
+
+        function searchTable(inputId, tableId) {
+            const input = document.getElementById(inputId);
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById(tableId);
+            const rows = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let match = false;
+                for (let j = 0; j < cells.length - 1; j++) {
+                    if (cells[j].textContent.toLowerCase().includes(filter)) {
+                        match = true;
+                        break;
+                    }
+                }
+                rows[i].style.display = match ? '' : 'none';
+            }
+        }
+
+        // Chatbot JavaScript
+        function handleMenuOption(option) {
+            const messages = document.getElementById('chatbot-messages');
+
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'chatbot-message user';
+            userMessage.innerHTML = `<p>${option.replace('_', ' ')}</p>`;
+            messages.appendChild(userMessage);
+
+            // Send AJAX request to backend
+            fetch('/patient/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ option: option })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'chatbot-message bot';
+                    botMessage.innerHTML = `<p>${data.response}</p>`;
+                    messages.appendChild(botMessage);
+                    messages.scrollTop = messages.scrollHeight;
+                })
+                .catch(error => {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'chatbot-message bot';
+                    botMessage.innerHTML = `<p>Error: Could not connect to server.</p>`;
+                    messages.appendChild(botMessage);
+                    messages.scrollTop = messages.scrollHeight;
+                });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatbot-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messages = document.getElementById('chatbot-messages');
+
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'chatbot-message user';
+            userMessage.innerHTML = `<p>${message}</p>`;
+            messages.appendChild(userMessage);
+
+            // Send AJAX request to backend
+            fetch('/patient/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: message })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'chatbot-message bot';
+                    botMessage.innerHTML = `<p>${data.response}</p>`;
+                    messages.appendChild(botMessage);
+                    messages.scrollTop = messages.scrollHeight;
+                })
+                .catch(error => {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'chatbot-message bot';
+                    botMessage.innerHTML = `<p>Error: Could not connect to server.</p>`;
+                    messages.appendChild(botMessage);
+                    messages.scrollTop = messages.scrollHeight;
+                });
+
+            // Clear input
+            input.value = '';
+        }
+
+        // Show dashboard by default
+        showSection('dashboard');
+    </script>
+</body>
+
+</html>
