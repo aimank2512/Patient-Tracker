@@ -253,10 +253,7 @@
                                     <label>Medical History</label>
                                     <textarea name="medical_history">{{ user_data.medical_history }}</textarea>
                                 </div>
-                                <div class="form-group">
-                                    <label>Preferred Doctor</label>
-                                    <input type="text" name="preferred_doctor" value="{{ user_data.preferred_doctor }}">
-                                </div>
+                                
                             </div>
                             <button type="submit">Update Profile</button>
                         </form>
@@ -308,16 +305,14 @@
 
                 <!-- Chatbot Section -->
                 <div id="chatbot" class="section hidden">
-                    <h1>Chat with MediCare Bot</h1>
+                    <h1>Chat with Bot</h1>
                     <div class="content-card">
                         <div class="chatbot-container">
                             <div class="chatbot-header">
-                                <i class="fas fa-plus-square"></i>
+                                
                                 <div>
-                                    <h3>AI ChatBot</h3>
-                                    <p>Ask about your prescriptions, lab reports, medical history, allergies, or
-                                        preferred doctor. Use the buttons or type your query below (e.g., "Show my
-                                        emergency contact" for more details).</p>
+                                    <h3>ChatBot</h3>
+                                    <p>Ask about your prescriptions, lab reports, medical history. Use the buttons or type your query below.</p>
                                 </div>
                             </div>
                             <div class="chatbot-menu">
@@ -354,7 +349,7 @@
                             </div>
                             <div class="chatbot-input">
                                 <input type="text" id="chatbot-input"
-                                    placeholder="Type your query (e.g., Show my lab report)"
+                                    placeholder="Type your query"
                                     onkeydown="if(event.key === 'Enter') sendMessage()">
                                 <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i> Send</button>
                             </div>

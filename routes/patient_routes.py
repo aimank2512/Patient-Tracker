@@ -615,9 +615,17 @@ def chatbot():
                         response = "No blood group found."
             
             else:
-                # If no database match, use Gemini API to generate a response
+                # jab data base match na ho , use Gemini API to generate a response
                 try:
-                    prompt = f"Answer this medical-related question in a detailed and informative way, providing at least 3-4 sentences of explanation: {query}"
+                    prompt = f"""
+You are a medical assistant chatbot. 
+If the following question is clearly medical-related, then give a detailed answer in 3-4 sentences. 
+If it is NOT related to medicine, health, diseases, prescriptions, or medical definitions, then just reply with:
+"This is not a medical query. Please ask medical-related questions only."
+
+Question: {query}
+"""
+
                     gemini_response = model.generate_content(prompt)
                     response = gemini_response.text.strip()
                     response = f"Here’s the information: {response}"

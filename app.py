@@ -13,7 +13,7 @@ app.secret_key = 'your-secret-key'  # Replace with a secure secret key
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(doctor_bp)
-app.register_blueprint(patient_bp, url_prefix='/patient')  # Added url_prefix for patient routes
+app.register_blueprint(patient_bp, url_prefix='/patient')  
 app.register_blueprint(lab_assistant_bp)
 
 if __name__ == '__main__':
